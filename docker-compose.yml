@@ -1,0 +1,77 @@
+version: "3.9"
+
+services:
+  # # Frontend apps
+  # customer-app:
+  #   build:
+  #     context: ../../frontend/customer-app
+  #     dockerfile: Dockerfile
+  #   container_name: customer-app
+  #   ports:
+  #     - "3000:3000"
+  #   networks:
+  #     - app-network
+
+  # admin-app:
+  #   build:
+  #     context: ../../frontend/admin-app
+  #     dockerfile: Dockerfile
+  #   container_name: admin-app
+  #   ports:
+  #     - "3001:3001"
+  #   networks:
+  #     - app-network
+
+  # Backend services
+  auth-service:
+    build:
+      context: ../mern-microservice/services/auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    environment:
+      - NODE_ENV=development
+    ports:
+      - "4000:4000"
+    depends_on:
+      - mongo
+    networks:
+      - app-network
+
+  # Databases and messaging
+  mongo:
+    image: mongo:6
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - app-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./infra/nginx/conf.d:/etc/nginx/conf.d:ro
+    depends_on:
+      - auth-service
+    networks:
+      - app-network
+
+volumes:
+  mongo-data:
+
+networks:
+  app-network:
+    driver: bridge
